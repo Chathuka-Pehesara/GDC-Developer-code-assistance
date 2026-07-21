@@ -61,10 +61,28 @@ def main():
         sys.exit(0)
 
     print("Analyzing PR diff with Gemini...")
-    runner = Runner(agent=root_agent)
-    final_state = runner.run(state={"pr_diff": pr_diff})
+    import asyncio
+    from google.adk.sessions import InMemorySessionService
+    from google.genai import types
     
-    review_comments = final_state.get("review_comments")
+    session_service = InMemorySessionService()
+    try:
+        asyncio.run(session_service.create_session(app_name="pr_review", user_id="cli_user", session_id="cli_session"))
+    except Exception:
+        pass # Ignore if it already exists or fails
+        
+    runner = Runner(agent=root_agent, session_service=session_service, app_name="pr_review")
+    
+    user_message = types.Content(role='user', parts=[types.Part(text=f"Please review this PR diff:\n\n{pr_diff}")])
+    events = runner.run(user_id="cli_user", session_id="cli_session", new_message=user_message)
+    
+    review_comments = None
+    for event in events:
+        if hasattr(event, 'is_final_response') and event.is_final_response():
+            if event.content and event.content.parts:
+                review_comments = event.content.parts[0].text
+                break
+    
     if not review_comments:
         print("Error: Agent did not return any review comments.")
         sys.exit(1)

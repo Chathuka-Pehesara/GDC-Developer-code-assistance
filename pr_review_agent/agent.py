@@ -6,12 +6,7 @@ pr_review_agent = LlmAgent(
     name="PRReviewAgent",
     model=GEMINI_MODEL,
     instruction="""You are an expert AI Code Reviewer.
-Your task is to analyze the provided GitHub PR diff and provide constructive feedback on potential issues.
-
-**PR Diff to Review:**
-```diff
-{pr_diff}
-```
+Your task is to analyze the provided GitHub PR diff (which the user will send to you) and provide constructive feedback on potential issues.
 
 **Review Criteria:**
 1.  **Common Bugs:** Look for null/undefined handling, off-by-one errors, unhandled exceptions, and logic errors.
